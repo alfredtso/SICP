@@ -41,7 +41,7 @@
     :else x))
 
 (defn average [x y]
-  (/ (+ x y) 2))
+  (/ (+ x y) 2.0))
 
 (defn improve [guess x]
   (average guess (/ x guess)))
@@ -215,7 +215,6 @@
 
 (exe-eleven-recur 5)
 
-(deftes)
 
 ;; Exercise 1.12
 ;; println statement for debugging 
@@ -308,7 +307,6 @@
     (find-divisor n 2))
   (= n (smallest-divisor n)))
 
-(prime? 3)
 
 (defn find-divisor [n test-divisor]
   (cond
@@ -365,12 +363,6 @@
 
 (prime? 1000)
 
-(fast-prime? 27 4)
-
-(fast-prime? 3 2)
-(fast-prime? 4 2)
-(fermat-test 3)
-(expmod 2 5 5)
 
 ;; Exercise 1.21
 (smallest-divisor 127)   ;199
@@ -381,7 +373,7 @@
 (time (smallest-divisor 10789))
 
 ;; Exercise 1.22
-;; output a list, iter no., 
+;; output a list, iter no
 (defn search-for-primes [largeThan]
   ;; input: number be tested, output bool
   (defn prime? [p]
@@ -402,14 +394,13 @@
 
 ;; increase by 100x then time roughly increase by 10 times 
 (search-for-primes 1000) ;"Elapsed time: 0.095853 msecs"
-(search-for-primes 100000) ;"Elapsed time: 0.749 msecs"
-(search-for-primes 10000000) ;"Elapsed time: 3.948665 msecs"
-(search-for-primes 1000000000)
+(search-for-primes 1000000) ;"Elapsed time: 0.706968 msecs"
+(search-for-primes 1000000000N)
 
 ;; Exercise 1.23
 (defn myNext [input]
   (if (= input 2)
-      2
+      3
       (+ input 2)))
 
 (defn find-divisor-alt [n test-divisor]
@@ -420,6 +411,11 @@
 
 (defn smallest-divisor-alt [n]
   (find-divisor-alt n 2))
+
+(defn prime-alt? [p]
+  (= p (smallest-divisor-alt p)))
+
+(prime-alt? 100004005N)
 
 (defn search-for-primes-alt [largeThan]
   ;; input: number be tested, output bool
@@ -434,14 +430,14 @@
                              (print primes)
                              (newline))
       :else
-        (if (prime? iter)
+        (if (prime-alt? iter)
             (help (+ iter 1) (cons iter primes))
             (help (+ iter 1) primes))))
   (time (help largeThan '())))
 
-(search-for-primes-alt 1000) ; "Elapsed time: 0.102556 msecs"
-(search-for-primes-alt 100000) ;"Elapsed time: 0.675177 msecs"
-(search-for-primes-alt 1000000) ;"Elapsed time: 0.995185 msecs"
+(search-for-primes-alt 1000) ; "Elapsed time: 0.068373 msecs"
+(search-for-primes-alt 1000000) ;"Elapsed time: 0.600771 msecs"
+;; compare with 1.22
 ;; No difference, why?
 ;; myNext only reduce the complexity from n to 1/2n which is constant
 ;; factor should not matter unless input is very large[?]
@@ -479,6 +475,7 @@
 (search-for-primes-fast 1000) ; "Elapsed time: 0.131802 msecs"
 (search-for-primes-fast 1000000) ; "Elapsed time: 1.372343 msecs"
 
+; Section 1.3
 (defn cube [x]
   (* x x x))
 
@@ -493,11 +490,40 @@
 
 (sum-cubes 1 10)
 
+(defn pi-sum [a b]
+  (defn pi-term [a]
+    (/ 1.0 (* a (+ a 2))))
+  (defn pi-next [b]
+    (+ b 4))
+  (if (> a b)
+      0
+      (+ (pi-term a)
+         (pi-sum (pi-next a) b))))
+
+;; close to pi/8
+(- (/ Math/PI 8) (pi-sum 1 1000))
+
+(defn exp-x [x]
+  (fast-expt Math/E x)) 
+
+(exp-x 5)
+
+;; We can also do numercial integration 
+(defn integral [function upper lower dx]
+  (defn add-dx [x]
+    (+ x dx))
+  (* (sum function (+ upper (/ dx 2)) add-dx lower)
+     dx))
+
+(integral cube 0 1 0.001)
+
+
 (defn plus2 [x]
   (+ x 2))
 
 (sum cube 0 (fn [x] (+ x 2)) 8)
 
+;; Exe 1.29
 (defn simpson [f a b n]
   (def h (/ (- b a) n))
   (defn leading [k]
@@ -546,12 +572,13 @@
       (* (term a) (product-recur term (mynext a) mynext b))))
 
 (defn myFactorial [a]
-  (product-recur (fn [x] x) 1 inc a)) 
+  (myProduct (fn [x] x) 1 inc a)) 
+
 ;; sicp.core-test
-(myFactorial 5)
+(myFactorial 200N)
 
 ;; Exercise 1.32
-
+;; the recursive version
 (defn accumulate [combiner null-value term a mynext b]
   (if (> a b)
       null-value
@@ -559,7 +586,24 @@
                            combiner null-value term
                            (mynext a) mynext b))))
 
-(accumulate * 1 (fn [x] x) 1 inc 5)
+(defn myFactorial [a]
+  (accumulate * 1  (fn [x] x) 1 inc a)) 
+
+(myFactorial 5)
+
+;; the iterative version
+(defn accum-iter [combiner null-value term a mynext b]
+  (defn iter [a result]
+    (if (> a b)
+        result
+        (iter (mynext a) (combiner (term a) result))))
+    (iter a 1))
+
+(defn myFactorial [a]
+  (accum-iter * 1 (fn [x] x) 1 inc a))
+
+(myFactorial 5)
+
 
 ;; Exercise 1.33
 ;; nested if is bad ?
@@ -574,18 +618,87 @@
       (filtered-accumulate
         combiner null-value term (mynext a) mynext b predicate)))
 
+(defn relative-prime [a n]
+  (if (= 1 (gcd a n))
+      true))
+(relative-prime 5 75)
+
+(defn relative-prime-onearg [a]
+  (relative-prime a 50))
 ;; (a)
 (filtered-accumulate + 0 (fn [x] x) 1 inc 10 odd?)
 
+;; (b)
+(defn product-of-all-relative-prime [n]
+  (def relative-prime-onearg (fn [x] (relative-prime x n)))
+  (filtered-accumulate + 0 (fn [x] x) 1 inc n relative-prime-onearg))
+
+(product-of-all-relative-prime 10)
+
+(def product-test (fn [x] (+ x 4)))
+(product-test 5)
+
+(defn f [x y]
+  (fn [a b]
+    (+ (* x (square a))
+       (* y b)
+       (* a b)))
+  (+ 1 (* x y)
+  (- 1 y)))
+(f 1 2)
+
+(defn f [x y]
+  (let [a (+ 1 (* x y))
+        b (- 1 y)]
+    (+ (* x (square a))
+       (* y b)
+       (* a b))))
+
+(f 1 2)
+
+;; scope 
+(def x 2)
+(defn letScope []
+    (let [x 3
+          y (+ x 2)]
+      (* x y)))
+(letScope)
+  
 ;; Exercise 1.34
 (defn f [g]
   (g 2))
 
+(f f)
 (f square)
-
 (f (fn [z] (* z (+ z 1))))
 
 ;; this will reduce to calling f with 2, meaning calling 2 with 2, so error
+(defn search [fx neg-point pos-point]
+  (let [midpoint (average neg-point pos-point)]
+    (if (close-enough? neg-point pos-point)
+        midpoint
+        (let [valueOfFx (fx midpoint)]
+        (cond (> valueOfFx 0) (search fx neg-point valueOfFx)
+              (< valueOfFx 0) (search fx valueOfFx pos-point)
+              :else midpoint)))))
+
+(defn close-enough? [x y]
+  (< (abs (- x y)) 0.001))
+
+(defn half-interval-method [f a b]
+  (let [a-value (f a)
+        b-value (f b)]
+    (cond (and (< a-value 0) (> b-value 0)) (search f a b)
+          (and (< b-value 0) (> a-value 0)) (search f b a)
+          :else (print "Error"))))
+
+(half-interval-method (fn [x] (- x 3)) 2.0 4.0)
+;; dont know why
+(half-interval-method sine 2.0 4.0)
+(defn sine [x]
+  (Math/sin x))
+
+(Math/sin 4)
 
 ;; Fixed point
 ;; Exercise 1.36
